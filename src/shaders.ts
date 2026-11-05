@@ -100,7 +100,6 @@ export const makeDisplayFrag = (count: number, cols: number, rows: number) => /*
   uniform float uPuff;
   uniform float uGloss;
   uniform float uRim;
-  uniform float uGap;
   uniform float uShadow;
   uniform float uStrength;
   uniform float uNoise;
@@ -154,14 +153,9 @@ export const makeDisplayFrag = (count: number, cols: number, rows: number) => /*
     return p - disp * uStrength - n * uNoise * sqrt(m) + vec2(0.0, uDrip * m);
   }
 
-  float smax(float a, float b, float k) {
-    float h = clamp(0.5 + 0.5 * (a - b) / k, 0.0, 1.0);
-    return mix(b, a, h) + k * h * (1.0 - h);
-  }
-
   // Combined field. Each pixel belongs to its nearest letter, clipped by the
-  // bisector with the runner-up minus half the gap. Neighbours pushed together
-  // by the melt flatten against each other instead of merging.
+  // bisector with the runner-up. Touching letters (or ones the melt pushes
+  // together) meet along a crease instead of merging.
   float field(vec2 p) {
     vec2 w = warp(p);
     float d1 = 1e5, d2 = 1e5;
@@ -174,7 +168,7 @@ export const makeDisplayFrag = (count: number, cols: number, rows: number) => /*
     }
     // Only the owning letter needs the smooth (cubic) lookup; it drives the normals.
     d1 = letterDist(best, bestIdx, w, true);
-    return smax(d1, 0.5 * (d1 - d2 + uGap), max(uGap * 0.5, 1e-5));
+    return max(d1, 0.5 * (d1 - d2));
   }
 
   // Distance inside -> dome height. Infinitely steep at the silhouette (the

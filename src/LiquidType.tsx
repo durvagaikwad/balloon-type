@@ -1,7 +1,7 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type MutableRefObject } from "react";
 import * as THREE from "three";
-import { autoLayout, fitLayout, type FittedLayout, type LetterPlacement, type Token } from "./layout";
+import { autoLayout, fillLayout, fitLayout, type FittedLayout, type LetterPlacement, type Token } from "./layout";
 import {
   DEFAULT_BACKGROUND,
   DEFAULT_FONT_FAMILY,
@@ -20,7 +20,12 @@ const FLOW_RES_MAX = 512;
 const MAX_DT = 1 / 30; // clamp so tab-switching doesn't cause jumps
 const ROT_STIFFNESS = 150; // tilt springs back to each letter's resting rotation
 const ROT_DAMPING = 12;
-const LAYOUT_GAP = 2; // auto layout spacing, in multiples of `gap`
+const RIM = 0.22; // background colour reflected at the silhouette
+const BRUSH_RADIUS = 0.16; // melt brush, in view heights
+// Organic wobble and downward sag in melted areas (view heights).
+const MELT_NOISE = 0.03;
+const MELT_NOISE_SCALE = 3;
+const MELT_DRIP = 0.03;
 
 export type LiquidTypeProps = {
   /** The word(s) to render. Spaces separate words, "\n" starts a new line. */
@@ -32,6 +37,12 @@ export type LiquidTypeProps = {
   ink?: string;
   /** Change to get a different auto layout. */
   seed?: number;
+  /**
+   * Auto layout style. "fill" (default) packs the letters to fill the whole
+   * view, re-packing when its shape changes. "row" keeps them on one line
+   * per text line, with small letters tucked into big ones' gaps.
+   */
+  arrangement?: "fill" | "row";
   /** Hand-placed letters (one per visible character), instead of the auto layout. */
   layout?: LetterPlacement[];
   /** Called with the layout in use, ready to paste into `layout` and tweak. */
@@ -109,7 +120,6 @@ function makeDisplayMaterial(count: number, atlas: Atlas, bg: THREE.Vector3, ink
       uPuff: { value: 0 },
       uGloss: { value: 1 },
       uRim: { value: 0 },
-      uGap: { value: 0 },
       uShadow: { value: 0 },
       uStrength: { value: 0 },
       uNoise: { value: 0 },
@@ -130,6 +140,7 @@ type SceneProps = {
   background: string;
   ink: string;
   seed: number;
+  arrangement: "fill" | "row";
   layout?: LetterPlacement[];
   onLayout?: (layout: LetterPlacement[]) => void;
   options: LiquidTypeOptions;
@@ -145,6 +156,7 @@ function LiquidScene({
   background,
   ink,
   seed,
+  arrangement,
   layout,
   onLayout,
   options,
@@ -225,13 +237,18 @@ function LiquidScene({
 
   // Build: wait for the font, make the SDF atlas (cached per character set),
   // lay the letters out and compile a shader for this letter count. The SDFs
-  // live in each letter's own tile space, so resizing never rebuilds them.
+  // live in each letter's own tile space, so resizing never rebuilds them;
+  // only the "fill" arrangement re-packs, because it depends on the view's shape.
   const layoutKey = layout ? JSON.stringify(layout) : "";
-  const { rounding, sizeVariety, tilt, gap } = options;
+  const { rounding, tilt } = options;
+  const fillAspect = !layout && arrangement === "fill" ? +(size.width / size.height).toFixed(2) : 0;
   useEffect(() => {
     let cancelled = false;
     const font = (px: number) => `${fontWeight} ${px}px ${fontFamily}`;
     (async () => {
+      // Let a resize settle before re-packing.
+      if (built.current) await new Promise((r) => setTimeout(r, 150));
+      if (cancelled) return;
       try {
         await document.fonts.load(font(100), text);
         await document.fonts.ready;
@@ -265,7 +282,11 @@ function LiquidScene({
             `[liquid-type] layout has ${layout.length} entries but the text has ${chars.length} letters; using the auto layout.`,
           );
         }
-        placements = autoLayout(tokens, atlas, { seed, gap: gap * LAYOUT_GAP, sizeVariety, tilt });
+        const settings = { seed, gap: 0, sizeVariety: 1, tilt }; // letters touch
+        placements =
+          arrangement === "fill" && fillAspect > 0
+            ? fillLayout(tokens, atlas, { ...settings, aspect: fillAspect })
+            : autoLayout(tokens, atlas, settings);
       }
       const fitted = fitLayout(placements, atlas);
       onLayoutRef.current?.(
@@ -302,7 +323,7 @@ function LiquidScene({
     return () => {
       cancelled = true;
     };
-  }, [text, fontFamily, fontWeight, seed, layoutKey, rounding, sizeVariety, tilt, gap, invalidate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [text, fontFamily, fontWeight, seed, arrangement, fillAspect, layoutKey, rounding, tilt, invalidate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(
     () => () => {
@@ -325,7 +346,7 @@ function LiquidScene({
     const bs = b.bodies;
 
     // Fit the layout into the view (view height = 1), then add physics offsets.
-    const fit = Math.min(aspect / width, 1 / height) * o.fill;
+    const fit = Math.min(aspect / width, 1 / height); // edge to edge
     const rest: Rest[] = placements.map((p, i) => ({
       x: p.x * fit,
       y: p.y * fit,
@@ -339,8 +360,7 @@ function LiquidScene({
     u.uPx.value = 1 / (size.height * dpr);
     u.uPuff.value = o.puffiness;
     u.uGloss.value = o.glossSharpness;
-    u.uRim.value = o.rim;
-    u.uGap.value = o.gap;
+    u.uRim.value = RIM;
     u.uShadow.value = o.shadow;
     u.uEnabled.value = reduced ? 0 : 1;
     if (reduced) return;
@@ -398,8 +418,6 @@ function LiquidScene({
       }
     }
 
-    // Never demand more spacing than the layout itself has, or letters would be shoved on load.
-    const contactGap = Math.min(o.gap * 1.5, o.gap * LAYOUT_GAP * fit * 0.9);
     const maxRot = (o.maxRotation * Math.PI) / 180;
     const steps = 2;
     const h = dt / steps;
@@ -418,7 +436,7 @@ function LiquidScene({
           body.va = 0;
         }
       }
-      resolveContacts(b.atlas.shapes, bs, rest, contactGap, o.bounce, aspect);
+      resolveContacts(b.atlas.shapes, bs, rest, 0, o.bounce, aspect);
     }
 
     // Melt spring from recovery time + jiggle: damping ratio ζ, settle time ≈ 4 / (ζω).
@@ -429,7 +447,7 @@ function LiquidScene({
     s.uB.value.set(p.x * aspect, p.y);
     s.uVel.value.copy(smoothVel.current);
     s.uAspect.value = aspect;
-    s.uRadius.value = o.brushRadius;
+    s.uRadius.value = BRUSH_RADIUS;
     s.uImpulse.value = o.meltGain * dt;
     s.uK.value = omega * omega;
     s.uC.value = 2 * zeta * omega;
@@ -448,9 +466,9 @@ function LiquidScene({
 
     u.uFlow.value = write.texture;
     u.uStrength.value = o.meltStrength;
-    u.uNoise.value = o.noiseAmount;
-    u.uNoiseScale.value = o.noiseScale;
-    u.uDrip.value = o.drip;
+    u.uNoise.value = MELT_NOISE;
+    u.uNoiseScale.value = MELT_NOISE_SCALE;
+    u.uDrip.value = MELT_DRIP;
     u.uTime.value = time.current;
   });
 
@@ -486,6 +504,7 @@ export function LiquidType({
   background = DEFAULT_BACKGROUND,
   ink = DEFAULT_INK,
   seed = 1,
+  arrangement = "fill",
   layout,
   onLayout,
   options,
@@ -561,6 +580,7 @@ export function LiquidType({
           background={background}
           ink={ink}
           seed={seed}
+          arrangement={arrangement}
           layout={layout}
           onLayout={onLayout}
           options={merged}

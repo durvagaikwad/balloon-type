@@ -11,26 +11,16 @@ export type LiquidTypeOptions = {
   puffiness: number;
   /** Specular exponent. Higher = smaller, crisper highlights. */
   glossSharpness: number;
-  /** How much background colour is reflected at the silhouette. */
-  rim: number;
-  /** Minimum gap between letters, in viewport heights. */
-  gap: number;
   /** Soft contact darkening of the background around letters. */
   shadow: number;
   /** Extra corner rounding applied to the font, as a fraction of the glyph tile. */
   rounding: number;
 
   // Layout
-  /** How much of the component the word fills (0..1). */
-  fill: number;
-  /** 0 = every letter the same size, 1 = big / medium / small letters tucked together. */
-  sizeVariety: number;
   /** Maximum random tilt per letter in the auto layout, in degrees. */
   tilt: number;
 
   // Melt
-  /** Cursor brush radius, in viewport heights. */
-  brushRadius: number;
   /** How far a melt can drag the surface, in viewport heights. */
   meltStrength: number;
   /** How hard the cursor pushes the melt. */
@@ -39,12 +29,6 @@ export type LiquidTypeOptions = {
   recoveryTime: number;
   /** 0 = no overshoot when the melt settles, 0.7 = wobbly. */
   jiggle: number;
-  /** Organic wobble added to melted areas, in viewport heights. */
-  noiseAmount: number;
-  /** Lower = bigger, blobbier noise. */
-  noiseScale: number;
-  /** Downward sag where the melt is strong. */
-  drip: number;
   /** Cursor speed (viewport heights / s) that counts as a full-strength swipe. */
   speedForMax: number;
   /** >1 keeps slow hovers subtle and lets fast swipes dominate. */
@@ -74,23 +58,15 @@ export type LiquidTypeOptions = {
 export const DEFAULT_OPTIONS: LiquidTypeOptions = {
   puffiness: 0.07,
   glossSharpness: 28,
-  rim: 0.22,
-  gap: 0.012,
   shadow: 0.07,
   rounding: 0.035,
 
-  fill: 0.96,
-  sizeVariety: 1,
   tilt: 12,
 
-  brushRadius: 0.16,
   meltStrength: 0.2,
   meltGain: 80,
   recoveryTime: 1.8,
   jiggle: 0.35,
-  noiseAmount: 0.03,
-  noiseScale: 3,
-  drip: 0.03,
   speedForMax: 6,
   speedCurve: 1.4,
 

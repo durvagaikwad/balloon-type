@@ -1,4 +1,5 @@
-import { outlineBounds, shapesTouch, type Atlas, type Pose } from "./sdf";
+import { resolveContacts, type Body, type Rest } from "./physics";
+import { deepestContact, outlineBounds, shapesTouch, type Atlas, type Pose } from "./sdf";
 
 /**
  * Where one letter sits, in layout units (any scale: the whole layout is
@@ -223,4 +224,201 @@ export function autoLayout(
   });
 
   return out;
+}
+
+/**
+ * Fills a box of the given aspect (height 1) with the letters, edge to edge.
+ *
+ * 1. Split the letters into rows that suit the box shape, breaking between
+ *    words where possible, so the text still reads left-to-right, top-to-bottom.
+ * 2. Scatter each letter around its spot in its row with a random size and tilt.
+ * 3. Grow each letter on its own, pushing neighbours aside by their real
+ *    shapes and keeping everything inside the box, until every letter is
+ *    boxed in. Letters with room keep growing, so gaps get filled.
+ *
+ * Deterministic for a given seed and aspect.
+ */
+export function fillLayout(
+  tokens: Token[],
+  atlas: Atlas,
+  {
+    seed,
+    gap,
+    sizeVariety,
+    tilt,
+    aspect,
+  }: { seed: number; gap: number; sizeVariety: number; tilt: number; aspect: number },
+): LetterPlacement[] {
+  const rand = mulberry32(seed);
+  const n = atlas.shapes.length;
+
+  // Reading order, with word boundaries and forced line breaks.
+  const order: number[] = [];
+  const wordStart = new Set<number>(); // positions in `order` where a new word begins
+  const forcedBreak = new Set<number>(); // positions where the text has "\n"
+  let pendingWord = false;
+  let pendingBreak = false;
+  for (const tok of tokens) {
+    if (tok.kind === "space") pendingWord = true;
+    else if (tok.kind === "newline") pendingBreak = true;
+    else {
+      if (order.length && (pendingWord || pendingBreak)) wordStart.add(order.length);
+      if (order.length && pendingBreak) forcedBreak.add(order.length);
+      pendingWord = pendingBreak = false;
+      order.push(tok.index);
+    }
+  }
+
+  // Rows: explicit line breaks win; otherwise pick a count that makes roughly
+  // square cells for this box, and snap each break to a nearby word boundary.
+  let breaks: number[];
+  if (forcedBreak.size) breaks = [...forcedBreak].sort((a, b) => a - b);
+  else {
+    const rows = Math.min(n, Math.max(1, Math.round(Math.sqrt(n / aspect))));
+    breaks = [];
+    for (let r = 1; r < rows; r++) {
+      const ideal = Math.round((r * n) / rows);
+      const reach = Math.ceil(n / rows / 2);
+      // Nearest word boundary within reach, else split the word at the ideal spot.
+      let best = ideal;
+      let bestDist = Infinity;
+      for (const w of wordStart) {
+        const d = Math.abs(w - ideal);
+        if (d <= reach && d < bestDist) {
+          best = w;
+          bestDist = d;
+        }
+      }
+      if (best > (breaks[breaks.length - 1] ?? 0) && best < n) breaks.push(best);
+    }
+  }
+  const rowsOf: number[][] = [];
+  let from = 0;
+  for (const b of [...breaks, n]) {
+    if (b > from) rowsOf.push(order.slice(from, b));
+    from = b;
+  }
+
+  // Initial scatter: each letter near the center of its cell, small, with a random size and tilt.
+  const R = rowsOf.length;
+  const longest = Math.max(...rowsOf.map((r) => r.length));
+  const start = 0.4 * Math.min(1 / R, aspect / longest);
+  const pick = [1, 0.75, 0.55];
+  const hgt: number[] = new Array(n); // ink heights
+  const rot: number[] = new Array(n);
+  const pos: { x: number; y: number }[] = new Array(n);
+  rowsOf.forEach((row, r) => {
+    const cellH = 1 / R;
+    const cellW = aspect / row.length;
+    row.forEach((gi, j) => {
+      const r01 = rand();
+      const cls = r01 < 0.45 ? pick[0] : r01 < 0.75 ? pick[1] : pick[2];
+      hgt[gi] = start * (1 - sizeVariety * (1 - cls));
+      rot[gi] = (rand() * 2 - 1) * tilt;
+      pos[gi] = {
+        x: -aspect / 2 + (j + 0.5) * cellW + (rand() - 0.5) * cellW * 0.3,
+        y: 0.5 - (r + 0.5) * cellH + (rand() - 0.5) * cellH * 0.3,
+      };
+    });
+  });
+
+  // Reading order: each letter stays in its row's band (it can nest a little
+  // into the next row) and to the right of the previous letter in its row.
+  const keepOrder = () => {
+    rowsOf.forEach((row, r) => {
+      const center = 0.5 - (r + 0.5) / R;
+      const band = 0.3 / R;
+      row.forEach((gi, j) => {
+        pos[gi].y = Math.min(center + band, Math.max(center - band, pos[gi].y));
+        if (j === 0) return;
+        const prev = row[j - 1];
+        const minX = pos[prev].x + 0.25 * Math.min(hgt[prev], hgt[gi]);
+        if (pos[gi].x < minX) pos[gi].x = minX;
+      });
+    });
+  };
+
+  const angle = (i: number) => (-rot[i] * Math.PI) / 180;
+  const poses = (): Pose[] =>
+    pos.map((p, i) => ({
+      cx: p.x,
+      cy: p.y,
+      cos: Math.cos(angle(i)),
+      sin: Math.sin(angle(i)),
+      tile: hgt[i] / atlas.inkHeights[i],
+    }));
+
+  // Push letters apart and into the box (reuses the runtime contact solver).
+  const relax = () => {
+    for (let pass = 0; pass < 6; pass++) {
+      const rest: Rest[] = pos.map((p, i) => ({
+        x: p.x,
+        y: p.y,
+        angle: angle(i),
+        tile: hgt[i] / atlas.inkHeights[i],
+        mass: hgt[i],
+      }));
+      const bodies: Body[] = pos.map(() => ({ x: 0, y: 0, vx: 0, vy: 0, a: 0, va: 0 }));
+      resolveContacts(atlas.shapes, bodies, rest, gap, 0, aspect);
+      let moved = 0;
+      bodies.forEach((b, i) => {
+        pos[i] = { x: pos[i].x + b.x, y: pos[i].y + b.y };
+        moved = Math.max(moved, Math.abs(b.x) + Math.abs(b.y));
+      });
+      keepOrder();
+      if (moved < 1e-4) break;
+    }
+  };
+
+  // Letters still overlapping a neighbour or poking out of the box.
+  const tolerance = 0.002; // view heights
+  const overlapping = () => {
+    const ps = poses();
+    const bad = new Set<number>();
+    for (let i = 0; i < n; i++) {
+      const b = outlineBounds(ps[i], atlas.shapes[i]);
+      if (Math.max(b.maxX - aspect / 2, -aspect / 2 - b.minX, b.maxY - 0.5, -0.5 - b.minY) > tolerance) bad.add(i);
+      for (let j = i + 1; j < n; j++) {
+        if (Math.hypot(ps[j].cx - ps[i].cx, ps[j].cy - ps[i].cy) > 0.55 * (ps[i].tile + ps[j].tile) + gap) continue;
+        const pen = Math.max(
+          deepestContact(ps[i], atlas.shapes[i], ps[j], atlas.shapes[j], gap).pen,
+          deepestContact(ps[j], atlas.shapes[j], ps[i], atlas.shapes[i], gap).pen,
+        );
+        if (pen > tolerance) {
+          bad.add(i);
+          bad.add(j);
+        }
+      }
+    }
+    return bad;
+  };
+
+  // Grow each letter on its own until it's boxed in. When a growth step
+  // doesn't fit, undo it and halve the step of the growing letters involved;
+  // a letter whose step gets tiny is done.
+  relax();
+  const step: number[] = new Array(n).fill(1.15);
+  const done: boolean[] = new Array(n).fill(false);
+  const MAX_HEIGHT = Math.min(0.92, 1.3 / R); // a letter can't swallow two rows
+  for (let iter = 0; iter < 400 && done.includes(false); iter++) {
+    const growing = done.flatMap((d, i) => (d ? [] : [i]));
+    const prevH = hgt.slice();
+    const prevPos = pos.map((p) => ({ ...p }));
+    for (const i of growing) hgt[i] = Math.min(hgt[i] * step[i], MAX_HEIGHT);
+    relax();
+    const bad = overlapping();
+    if (!bad.size) {
+      for (const i of growing) if (hgt[i] >= MAX_HEIGHT) done[i] = true;
+      continue;
+    }
+    prevH.forEach((h, i) => (hgt[i] = h));
+    prevPos.forEach((p, i) => (pos[i] = p));
+    const culprits = growing.filter((i) => bad.has(i));
+    for (const i of culprits.length ? culprits : growing) {
+      step[i] = 1 + (step[i] - 1) / 2;
+      if (step[i] < 1.004) done[i] = true;
+    }
+  }
+
+  return pos.map((p, i) => ({ x: p.x, y: p.y, height: hgt[i], rotate: rot[i] }));
 }
