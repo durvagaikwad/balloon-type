@@ -20,6 +20,8 @@ const FLOW_RES_MAX = 512;
 const MAX_DT = 1 / 30; // clamp so tab-switching doesn't cause jumps
 const ROT_STIFFNESS = 150; // tilt springs back to each letter's resting rotation
 const ROT_DAMPING = 12;
+const LETTER_REACH = 0.15; // how far beyond a letter's core the cursor reaches, in view heights
+const MAX_ROTATION = 15; // degrees a push can tilt a letter
 const RIM = 0.22; // background colour reflected at the silhouette
 const BRUSH_RADIUS = 0.16; // melt brush, in view heights
 // Organic wobble and downward sag in melted areas (view heights).
@@ -404,7 +406,7 @@ function LiquidScene({
         const ox = lx - cx;
         const oy = ly - cy;
         const d = Math.hypot(ox, oy) || 1e-6;
-        const reach = o.letterRadius + placements[i].height * fit * 0.35;
+        const reach = LETTER_REACH + placements[i].height * fit * 0.35;
         if (d >= reach) continue;
         const fall = (1 - d / reach) ** 2;
         const mag = o.letterPush * fall * (o.hoverFloor + amount);
@@ -418,7 +420,7 @@ function LiquidScene({
       }
     }
 
-    const maxRot = (o.maxRotation * Math.PI) / 180;
+    const maxRot = (MAX_ROTATION * Math.PI) / 180;
     const steps = 2;
     const h = dt / steps;
     for (let step = 0; step < steps; step++) {

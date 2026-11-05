@@ -8,46 +8,41 @@ const FONTS = [
   { label: "Chango", family: '"Chango"' },
 ];
 
-type Control = { key: keyof LiquidTypeOptions; label: string; min: number; max: number; step: number };
+type Group = "Look" | "Melt" | "Movement";
+type Spec = { label: string; min: number; max: number; step: number; group: Group };
+type Control = Spec & { key: keyof LiquidTypeOptions };
 
-const GROUPS: { title: string; controls: Control[] }[] = [
-  {
-    title: "Look",
-    controls: [
-      { key: "puffiness", label: "Puffiness", min: 0.01, max: 0.15, step: 0.001 },
-      { key: "glossSharpness", label: "Gloss", min: 4, max: 120, step: 1 },
-      { key: "shadow", label: "Shadow", min: 0, max: 0.3, step: 0.005 },
-      { key: "rounding", label: "Rounding", min: 0, max: 0.08, step: 0.005 },
-    ],
-  },
-  {
-    title: "Layout",
-    controls: [
-      { key: "tilt", label: "Tilt", min: 0, max: 30, step: 1 },
-    ],
-  },
-  {
-    title: "Melt",
-    controls: [
-      { key: "meltStrength", label: "Strength", min: 0, max: 0.6, step: 0.01 },
-      { key: "meltGain", label: "Gain", min: 5, max: 300, step: 5 },
-      { key: "recoveryTime", label: "Recovery time", min: 0.3, max: 5, step: 0.1 },
-      { key: "jiggle", label: "Jiggle", min: 0, max: 0.8, step: 0.01 },
-    ],
-  },
-  {
-    title: "Movement",
-    controls: [
-      { key: "letterPush", label: "Push", min: 0, max: 200, step: 1 },
-      { key: "letterRadius", label: "Reach", min: 0, max: 0.6, step: 0.01 },
-      { key: "friction", label: "Friction", min: 0.2, max: 10, step: 0.1 },
-      { key: "homePull", label: "Home pull", min: 0, max: 50, step: 0.5 },
-      { key: "bounce", label: "Bounce", min: 0, max: 1, step: 0.05 },
-      { key: "maxRotation", label: "Max rotation", min: 0, max: 45, step: 1 },
-      { key: "spin", label: "Spin", min: 0, max: 12, step: 0.1 },
-    ],
-  },
-];
+// A slider for every option the package has. The Record type makes TypeScript
+// fail the build if an option is added to the package without a control here.
+const CONTROLS: Record<keyof LiquidTypeOptions, Spec> = {
+  puffiness: { label: "Puffiness", min: 0.01, max: 0.15, step: 0.001, group: "Look" },
+  glossSharpness: { label: "Gloss", min: 4, max: 120, step: 1, group: "Look" },
+  tilt: { label: "Tilt", min: 0, max: 30, step: 1, group: "Look" },
+  shadow: { label: "Shadow", min: 0, max: 0.3, step: 0.005, group: "Look" },
+  rounding: { label: "Rounding", min: 0, max: 0.08, step: 0.005, group: "Look" },
+
+  meltStrength: { label: "Strength", min: 0, max: 0.6, step: 0.01, group: "Melt" },
+  recoveryTime: { label: "Recovery time", min: 0.3, max: 5, step: 0.1, group: "Melt" },
+  meltGain: { label: "Gain", min: 5, max: 300, step: 5, group: "Melt" },
+  jiggle: { label: "Jiggle", min: 0, max: 0.8, step: 0.01, group: "Melt" },
+  speedForMax: { label: "Swipe speed", min: 0.5, max: 20, step: 0.5, group: "Melt" },
+  speedCurve: { label: "Speed curve", min: 0.5, max: 3, step: 0.05, group: "Melt" },
+
+  letterPush: { label: "Push", min: 0, max: 200, step: 1, group: "Movement" },
+  bounce: { label: "Bounce", min: 0, max: 1, step: 0.05, group: "Movement" },
+  friction: { label: "Friction", min: 0.2, max: 10, step: 0.1, group: "Movement" },
+  homePull: { label: "Home pull", min: 0, max: 50, step: 0.5, group: "Movement" },
+  hoverFloor: { label: "Hover push", min: 0, max: 1, step: 0.01, group: "Movement" },
+  flingBias: { label: "Fling", min: 0, max: 2, step: 0.05, group: "Movement" },
+  spin: { label: "Spin", min: 0, max: 12, step: 0.1, group: "Movement" },
+};
+
+const GROUPS = (["Look", "Melt", "Movement"] as const).map((title) => ({
+  title,
+  controls: (Object.keys(CONTROLS) as (keyof LiquidTypeOptions)[])
+    .filter((key) => CONTROLS[key].group === title)
+    .map((key): Control => ({ key, ...CONTROLS[key] })),
+}));
 
 // Inline icons (no icon library), drawn on a 16px grid in the current text colour.
 const Icon = ({ children }: { children: React.ReactNode }) => (
@@ -167,6 +162,27 @@ function App() {
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const renderGroups = (groups: typeof GROUPS) =>
+    groups.map((group) => (
+      <fieldset key={group.title}>
+        <legend>{group.title}</legend>
+        {group.controls.map((c) => (
+          <label key={c.key} className="row">
+            <span>{c.label}</span>
+            <input
+              type="range"
+              min={c.min}
+              max={c.max}
+              step={c.step}
+              value={options[c.key]}
+              onChange={(e) => setOptions((o) => ({ ...o, [c.key]: Number(e.target.value) }))}
+            />
+            <output>{format(options[c.key], c.step)}</output>
+          </label>
+        ))}
+      </fieldset>
+    ));
+
   return (
     <>
       <LiquidType
@@ -231,25 +247,7 @@ function App() {
                   Reset
                 </button>
               </header>
-              {GROUPS.map((group) => (
-                <fieldset key={group.title}>
-                  <legend>{group.title}</legend>
-                  {group.controls.map((c) => (
-                    <label key={c.key} className="row">
-                      <span>{c.label}</span>
-                      <input
-                        type="range"
-                        min={c.min}
-                        max={c.max}
-                        step={c.step}
-                        value={options[c.key]}
-                        onChange={(e) => setOptions((o) => ({ ...o, [c.key]: Number(e.target.value) }))}
-                      />
-                      <output>{format(options[c.key], c.step)}</output>
-                    </label>
-                  ))}
-                </fieldset>
-              ))}
+              {renderGroups(GROUPS)}
             </section>
           )}
           <div className="panel pill">

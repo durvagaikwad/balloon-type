@@ -37,8 +37,6 @@ export type LiquidTypeOptions = {
   // Movement
   /** Force the cursor applies to letters. 0 disables pushing. */
   letterPush: number;
-  /** How far beyond a letter's core the cursor reaches, in viewport heights. */
-  letterRadius: number;
   /** Fraction of the push a slow or resting cursor still applies. */
   hoverFloor: number;
   /** How much a swipe throws letters along its direction vs straight away. */
@@ -49,8 +47,6 @@ export type LiquidTypeOptions = {
   homePull: number;
   /** Energy kept when a letter hits an edge or another letter (0..1). */
   bounce: number;
-  /** Maximum tilt from pushing, in degrees. */
-  maxRotation: number;
   /** How strongly a push tilts a letter. */
   spin: number;
 };
@@ -71,13 +67,11 @@ export const DEFAULT_OPTIONS: LiquidTypeOptions = {
   speedCurve: 1.4,
 
   letterPush: 40,
-  letterRadius: 0.15,
   hoverFloor: 0.1,
   flingBias: 0.8,
   friction: 2.5,
   homePull: 0,
   bounce: 0.45,
-  maxRotation: 15,
   spin: 4,
 };
 

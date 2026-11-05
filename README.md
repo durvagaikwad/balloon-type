@@ -116,13 +116,12 @@ All are optional. Sizes are fractions of the component's height.
 | `jiggle` | `0.35` | Overshoot as the melt settles. |
 | `speedForMax`, `speedCurve` | `6`, `1.4` | How swipe speed maps to melt strength. |
 | `letterPush` | `40` | How hard the cursor shoves letters. `0` = letters stay put. |
-| `letterRadius` | `0.15` | Cursor reach around each letter. |
 | `hoverFloor` | `0.1` | Push from a slow / resting cursor. |
 | `flingBias` | `0.8` | Throw along the swipe vs. straight away. |
 | `friction` | `2.5` | Lower = thrown letters glide further. |
 | `homePull` | `0` | Spring back to the layout. `0` = letters stay where you leave them. |
 | `bounce` | `0.45` | Bounciness off edges and other letters. |
-| `maxRotation`, `spin` | `15`, `4` | How much pushes tilt letters. |
+| `spin` | `4` | How much pushes tilt letters. |
 
 ## How it works
 
