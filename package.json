@@ -1,0 +1,73 @@
+{
+  "name": "liquid-type",
+  "version": "0.1.0",
+  "description": "Glossy, inflated liquid letters for React. Type any word, then push it around and melt it with the cursor.",
+  "license": "MIT",
+  "author": "Durva Gaikwad",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/durvagaikwad/liquid-type.git"
+  },
+  "homepage": "https://durvagaikwad.github.io/liquid-type/",
+  "bugs": "https://github.com/durvagaikwad/liquid-type/issues",
+  "keywords": [
+    "react",
+    "three",
+    "react-three-fiber",
+    "webgl",
+    "typography",
+    "sdf",
+    "shader",
+    "interactive",
+    "liquid",
+    "glossy"
+  ],
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "dev": "vite --config demo/vite.config.ts",
+    "build:demo": "vite build --config demo/vite.config.ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run build"
+  },
+  "peerDependencies": {
+    "@react-three/fiber": "^8.15.0 || ^9.0.0",
+    "react": "^18.2.0 || ^19.0.0",
+    "react-dom": "^18.2.0 || ^19.0.0",
+    "three": ">=0.155.0"
+  },
+  "devDependencies": {
+    "@react-three/fiber": "^9.8.2",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "leva": "^0.10.1",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "three": "^0.187.0",
+    "tsup": "^9.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.6"
+  }
+}
