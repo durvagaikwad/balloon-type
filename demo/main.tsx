@@ -121,6 +121,9 @@ function App() {
   const params = new URLSearchParams(location.search);
   const [text, setText] = useState(params.get("text") ?? "DURVA");
   const [seed, setSeed] = useState(Number(params.get("seed") ?? 1));
+  // ?embed shows the letters alone, with no controls: for the demo framed
+  // inside another page (Durva's portfolio playground card)
+  const embed = params.has("embed");
   const [font, setFont] = useState(FONTS[0].family);
   const [background, setBackground] = useState("#F1ECE3");
   const [ink, setInk] = useState("#0b0b0c");
@@ -195,7 +198,7 @@ function App() {
         onLayout={(l) => (layout.current = l)}
         style={{ height: "100svh" }}
       />
-      <div className="dock">
+      <div className="dock" style={embed ? { display: "none" } : undefined}>
         <form className="panel bar" onSubmit={(e) => e.preventDefault()}>
           <input
             aria-label="Text"
