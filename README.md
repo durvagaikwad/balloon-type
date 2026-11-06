@@ -8,7 +8,7 @@ Glossy, inflated balloon letters for React. Type any word. Push the letters arou
 | --- | --- |
 | ![DURVA at rest](docs/rest.jpg) | ![DURVA mid-melt](docs/melt.jpg) |
 
-- **Any word, edge to edge.** Letters are scattered with random sizes and tilts, then grown until they fill the whole view with no gaps. The text still reads left to right, top to bottom.
+- **Any word, packed tight.** Letters are scattered with random sizes and tilts, then grown until they pack together with no gaps. They fill 90% of the view, leaving room all around (`scale: 1` goes edge to edge). The text still reads left to right, top to bottom.
 - **Real gloss.** Each glyph becomes a signed distance field, inflated into a dome and lit with sharp highlights.
 - **Melt + physics.** A cursor flowmap bends the surface. Letters are free bodies that collide by their actual shapes, so they never overlap.
 - **Respectful.** Static under `prefers-reduced-motion`, pauses offscreen, and is labelled for screen readers.
@@ -110,6 +110,7 @@ All are optional. Sizes are fractions of the component's height.
 | `shadow` | `0.07` | Soft darkening of the background around letters. |
 | `rounding` | `0.035` | Extra rounding applied to the font's corners. |
 | `tilt` | `12` | Max random tilt in the auto layout (degrees). |
+| `scale` | `0.9` | How much of the view the letters fill. `1` is edge to edge; the default leaves room all around. |
 | `meltStrength` | `0.2` | How far a melt drags the surface. |
 | `meltGain` | `80` | How hard the cursor pushes the melt. |
 | `recoveryTime` | `1.8` | Seconds for the melt to ooze back. |

@@ -19,7 +19,7 @@ export type BalloonTypeOptions = {
   // Layout
   /** Maximum random tilt per letter in the auto layout, in degrees. */
   tilt: number;
-  /** How much of the view the letters fill: 1 = edge to edge, lower leaves
+  /** How much of the view the letters fill: 1 = edge to edge, lower (default 0.9) leaves
       open room around them to push them into. */
   scale: number;
 
@@ -61,7 +61,7 @@ export const DEFAULT_OPTIONS: BalloonTypeOptions = {
   rounding: 0.035,
 
   tilt: 12,
-  scale: 0.8,
+  scale: 0.9,
 
   meltStrength: 0.2,
   meltGain: 80,
