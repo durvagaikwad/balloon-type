@@ -11,7 +11,7 @@ export const fullscreenVert = /* glsl */ `
 // units. Every frame:
 //   - the cursor adds velocity along the segment it travelled this frame
 //   - a damped spring pulls displacement back to zero (the ooze + jiggle)
-// The result is written to the other render target (ping-pong, see LiquidType).
+// The result is written to the other render target (ping-pong, see BalloonType).
 export const simFrag = /* glsl */ `
   precision highp float;
   uniform sampler2D uPrev;

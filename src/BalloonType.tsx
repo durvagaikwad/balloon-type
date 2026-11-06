@@ -8,7 +8,7 @@ import {
   DEFAULT_INK,
   DEFAULT_OPTIONS,
   MAX_LETTERS,
-  type LiquidTypeOptions,
+  type BalloonTypeOptions,
 } from "./options";
 import { resolveContacts, type Body, type Rest } from "./physics";
 import { buildAtlas, hasInk, SDF_RESOLUTION, type Atlas } from "./sdf";
@@ -29,7 +29,7 @@ const MELT_NOISE = 0.03;
 const MELT_NOISE_SCALE = 3;
 const MELT_DRIP = 0.03;
 
-export type LiquidTypeProps = {
+export type BalloonTypeProps = {
   /** The word(s) to render. Spaces separate words, "\n" starts a new line. */
   text: string;
   /** CSS font-family. The font must already be loaded on the page (e.g. Google Fonts or next/font). */
@@ -50,7 +50,7 @@ export type LiquidTypeProps = {
   /** Called with the layout in use, ready to paste into `layout` and tweak. */
   onLayout?: (layout: LetterPlacement[]) => void;
   /** Tuning; anything left out uses DEFAULT_OPTIONS. */
-  options?: Partial<LiquidTypeOptions>;
+  options?: Partial<BalloonTypeOptions>;
   /** false = static poster, no cursor effects. */
   interactive?: boolean;
   className?: string;
@@ -145,13 +145,13 @@ type SceneProps = {
   arrangement: "fill" | "row";
   layout?: LetterPlacement[];
   onLayout?: (layout: LetterPlacement[]) => void;
-  options: LiquidTypeOptions;
+  options: BalloonTypeOptions;
   interactive: boolean;
   reduced: boolean;
   pointer: MutableRefObject<PointerState>;
 };
 
-function LiquidScene({
+function BalloonScene({
   text,
   fontFamily,
   fontWeight,
@@ -281,7 +281,7 @@ function LiquidScene({
       else {
         if (layout) {
           console.warn(
-            `[liquid-type] layout has ${layout.length} entries but the text has ${chars.length} letters; using the auto layout.`,
+            `[balloon-type] layout has ${layout.length} entries but the text has ${chars.length} letters; using the auto layout.`,
           );
         }
         const settings = { seed, gap: 0, sizeVariety: 1, tilt }; // letters touch
@@ -494,12 +494,12 @@ function usePrefersReducedMotion() {
 }
 
 /**
- * Glossy, inflated liquid letters. Push them around with the cursor (or a
+ * Glossy, inflated balloon letters. Push them around with the cursor (or a
  * finger) and they melt and smear like warm wax.
  *
  * The component fills its parent: give the parent a height.
  */
-export function LiquidType({
+export function BalloonType({
   text,
   fontFamily = DEFAULT_FONT_FAMILY,
   fontWeight = 400,
@@ -513,7 +513,7 @@ export function LiquidType({
   interactive = true,
   className,
   style,
-}: LiquidTypeProps) {
+}: BalloonTypeProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
   const [visible, setVisible] = useState(true);
@@ -575,7 +575,7 @@ export function LiquidType({
         gl={{ antialias: false, alpha: false, powerPreference: "high-performance" }}
         style={{ position: "absolute", inset: 0 }}
       >
-        <LiquidScene
+        <BalloonScene
           text={text}
           fontFamily={fontFamily}
           fontWeight={fontWeight}

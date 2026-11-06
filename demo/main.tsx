@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { DEFAULT_OPTIONS, LiquidType, type LetterPlacement, type LiquidTypeOptions } from "liquid-type";
+import { DEFAULT_OPTIONS, BalloonType, type LetterPlacement, type BalloonTypeOptions } from "balloon-type";
 
 const FONTS = [
   { label: "Bagel Fat One", family: '"Bagel Fat One"' },
@@ -10,11 +10,11 @@ const FONTS = [
 
 type Group = "Look" | "Melt" | "Movement";
 type Spec = { label: string; min: number; max: number; step: number; group: Group };
-type Control = Spec & { key: keyof LiquidTypeOptions };
+type Control = Spec & { key: keyof BalloonTypeOptions };
 
 // A slider for every option the package has. The Record type makes TypeScript
 // fail the build if an option is added to the package without a control here.
-const CONTROLS: Record<keyof LiquidTypeOptions, Spec> = {
+const CONTROLS: Record<keyof BalloonTypeOptions, Spec> = {
   puffiness: { label: "Puffiness", min: 0.01, max: 0.15, step: 0.001, group: "Look" },
   glossSharpness: { label: "Gloss", min: 4, max: 120, step: 1, group: "Look" },
   tilt: { label: "Tilt", min: 0, max: 30, step: 1, group: "Look" },
@@ -39,7 +39,7 @@ const CONTROLS: Record<keyof LiquidTypeOptions, Spec> = {
 
 const GROUPS = (["Look", "Melt", "Movement"] as const).map((title) => ({
   title,
-  controls: (Object.keys(CONTROLS) as (keyof LiquidTypeOptions)[])
+  controls: (Object.keys(CONTROLS) as (keyof BalloonTypeOptions)[])
     .filter((key) => CONTROLS[key].group === title)
     .map((key): Control => ({ key, ...CONTROLS[key] })),
 }));
@@ -82,7 +82,7 @@ const GitHubIcon = () => (
 
 const format = (value: number, step: number) => (step >= 1 ? String(value) : value.toFixed(step < 0.01 ? 3 : 2));
 
-// A ready-to-paste <LiquidType /> snippet for what's on screen: text, font,
+// A ready-to-paste <BalloonType /> snippet for what's on screen: text, font,
 // colours, the exact arrangement, and only the options changed from the defaults.
 function toSnippet(p: {
   text: string;
@@ -90,10 +90,10 @@ function toSnippet(p: {
   ink: string;
   background: string;
   layout: LetterPlacement[];
-  options: LiquidTypeOptions;
+  options: BalloonTypeOptions;
 }) {
   const plain = /^[^"\\\n{}]*$/.test(p.text);
-  const changed = (Object.keys(p.options) as (keyof LiquidTypeOptions)[])
+  const changed = (Object.keys(p.options) as (keyof BalloonTypeOptions)[])
     .filter((k) => p.options[k] !== DEFAULT_OPTIONS[k])
     .map((k) => `${k}: ${p.options[k]}`);
   const lines = [
@@ -107,10 +107,10 @@ function toSnippet(p: {
     ...(changed.length ? [`  options={{ ${changed.join(", ")} }}`] : []),
   ];
   return [
-    'import { LiquidType } from "liquid-type";',
+    'import { BalloonType } from "balloon-type";',
     "",
     `// Load the font on your page first (e.g. Google Fonts or next/font).`,
-    "<LiquidType",
+    "<BalloonType",
     ...lines,
     "/>",
     "",
@@ -124,7 +124,7 @@ function App() {
   const [font, setFont] = useState(FONTS[0].family);
   const [background, setBackground] = useState("#F1ECE3");
   const [ink, setInk] = useState("#0b0b0c");
-  const [options, setOptions] = useState<LiquidTypeOptions>(DEFAULT_OPTIONS);
+  const [options, setOptions] = useState<BalloonTypeOptions>(DEFAULT_OPTIONS);
   const [tuneOpen, setTuneOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const layout = useRef<LetterPlacement[]>([]);
@@ -185,7 +185,7 @@ function App() {
 
   return (
     <>
-      <LiquidType
+      <BalloonType
         text={deferredText}
         seed={seed}
         fontFamily={font}
@@ -227,13 +227,13 @@ function App() {
             className="icon"
             onClick={copyCode}
             aria-label={copied ? "Copied" : "Copy code"}
-            title={copied ? "Copied" : "Copy code: a ready-to-paste <LiquidType /> for what's on screen"}
+            title={copied ? "Copied" : "Copy code: a ready-to-paste <BalloonType /> for what's on screen"}
           >
             {copied ? <CheckIcon /> : <CopyIcon />}
           </button>
         </div>
         <div className="panel pill">
-          <a className="button icon" href="https://github.com/durvagaikwad/liquid-type" aria-label="GitHub" title="View on GitHub">
+          <a className="button icon" href="https://github.com/durvagaikwad/balloon-type" aria-label="GitHub" title="View on GitHub">
             <GitHubIcon />
           </a>
         </div>

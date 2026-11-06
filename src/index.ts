@@ -1,3 +1,3 @@
-export { LiquidType, type LiquidTypeProps } from "./LiquidType";
-export { DEFAULT_OPTIONS, type LiquidTypeOptions } from "./options";
+export { BalloonType, type BalloonTypeProps } from "./BalloonType";
+export { DEFAULT_OPTIONS, type BalloonTypeOptions } from "./options";
 export type { LetterPlacement } from "./layout";

@@ -1,15 +1,15 @@
 {
-  "name": "liquid-type",
+  "name": "balloon-type",
   "version": "0.1.0",
-  "description": "Glossy, inflated liquid letters for React. Type any word, then push it around and melt it with the cursor.",
+  "description": "Glossy, inflated balloon letters for React. Type any word, then push it around and melt it with the cursor.",
   "license": "MIT",
   "author": "Durva Gaikwad",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/durvagaikwad/liquid-type.git"
+    "url": "git+https://github.com/durvagaikwad/balloon-type.git"
   },
-  "homepage": "https://durvagaikwad.github.io/liquid-type/",
-  "bugs": "https://github.com/durvagaikwad/liquid-type/issues",
+  "homepage": "https://durvagaikwad.github.io/balloon-type/",
+  "bugs": "https://github.com/durvagaikwad/balloon-type/issues",
   "keywords": [
     "react",
     "three",
@@ -19,7 +19,7 @@
     "sdf",
     "shader",
     "interactive",
-    "liquid",
+    "balloon",
     "glossy"
   ],
   "type": "module",

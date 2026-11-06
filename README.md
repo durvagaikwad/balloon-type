@@ -1,8 +1,8 @@
-# liquid-type
+# balloon-type
 
-Glossy, inflated liquid letters for React. Type any word. Push the letters around with your cursor or finger, and they melt and smear like warm wax.
+Glossy, inflated balloon letters for React. Type any word. Push the letters around with your cursor or finger, and they melt and smear like warm wax.
 
-**[Live demo →](https://durvagaikwad.github.io/liquid-type/)**
+**[Live demo →](https://durvagaikwad.github.io/balloon-type/)**
 
 | At rest | Melting |
 | --- | --- |
@@ -16,7 +16,7 @@ Glossy, inflated liquid letters for React. Type any word. Push the letters aroun
 ## Install
 
 ```bash
-npm install liquid-type three @react-three/fiber
+npm install balloon-type three @react-three/fiber
 ```
 
 Requires React 18 or 19. Use `@react-three/fiber` v8 with React 18, or v9 with React 19.
@@ -24,12 +24,12 @@ Requires React 18 or 19. Use `@react-three/fiber` v8 with React 18, or v9 with R
 ## Usage
 
 ```tsx
-import { LiquidType } from "liquid-type";
+import { BalloonType } from "balloon-type";
 
 export default function Hero() {
   return (
     <div style={{ height: "100vh" }}>
-      <LiquidType text="HELLO" />
+      <BalloonType text="HELLO" />
     </div>
   );
 }
@@ -53,7 +53,7 @@ The default font is [Bagel Fat One](https://fonts.google.com/specimen/Bagel+Fat+
 import { Bagel_Fat_One } from "next/font/google";
 const bagel = Bagel_Fat_One({ subsets: ["latin"], weight: "400" });
 
-<LiquidType text="HELLO" fontFamily={bagel.style.fontFamily} />;
+<BalloonType text="HELLO" fontFamily={bagel.style.fontFamily} />;
 ```
 
 The component is client-only (it ships with `"use client"`), so it works in the App Router as-is.
@@ -71,16 +71,16 @@ The component is client-only (it ships with `"use client"`), so it works in the 
 | `arrangement` | `"fill" \| "row"` | `"fill"` | `fill` packs letters to fill the whole view and re-packs on resize. `row` keeps one line per text line, with small letters tucked into big ones. |
 | `layout` | `LetterPlacement[]` | auto | Hand-placed letters (see below). |
 | `onLayout` | `(layout) => void` | | Receives the layout in use. |
-| `options` | `Partial<LiquidTypeOptions>` | `DEFAULT_OPTIONS` | Tuning, see below. |
+| `options` | `Partial<BalloonTypeOptions>` | `DEFAULT_OPTIONS` | Tuning, see below. |
 | `interactive` | `boolean` | `true` | `false` gives a static poster. |
 | `className`, `style` | | | Applied to the wrapper. |
 
 ### Hand-tuning the layout
 
-The auto layout is a starting point. Grab it with `onLayout`, or use the **Copy code** button in the [demo](https://durvagaikwad.github.io/liquid-type/), which copies a ready-to-paste `<LiquidType />` with your text, font, colours, layout and changed settings. Adjust the numbers and pass it back:
+The auto layout is a starting point. Grab it with `onLayout`, or use the **Copy code** button in the [demo](https://durvagaikwad.github.io/balloon-type/), which copies a ready-to-paste `<BalloonType />` with your text, font, colours, layout and changed settings. Adjust the numbers and pass it back:
 
 ```tsx
-<LiquidType
+<BalloonType
   text="DURVA"
   layout={[
     { x: -0.676, y: 0.012, height: 0.92, rotate: -4 },

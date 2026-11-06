@@ -7,7 +7,7 @@ export default defineConfig({
   base: process.env.BASE ?? "/",
   plugins: [react()],
   resolve: {
-    alias: { "liquid-type": fileURLToPath(new URL("../src/index.ts", import.meta.url)) },
+    alias: { "balloon-type": fileURLToPath(new URL("../src/index.ts", import.meta.url)) },
   },
   build: { outDir: "dist", emptyOutDir: true },
 });

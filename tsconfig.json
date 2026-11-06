@@ -12,7 +12,7 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "paths": {
-      "liquid-type": ["./src/index.ts"]
+      "balloon-type": ["./src/index.ts"]
     }
   },
   "include": ["src", "demo"]

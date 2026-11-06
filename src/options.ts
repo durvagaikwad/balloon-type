@@ -1,11 +1,11 @@
 /**
- * Tuning for <LiquidType />. Every field is optional on the component; anything
+ * Tuning for <BalloonType />. Every field is optional on the component; anything
  * you leave out falls back to DEFAULT_OPTIONS.
  *
  * Units: "viewport heights" means fractions of the component's height
  * (0.1 = 10% of its height), so the feel is the same at any size.
  */
-export type LiquidTypeOptions = {
+export type BalloonTypeOptions = {
   // Look
   /** Dome width from the edge inward, in viewport heights. Bigger = more inflated. */
   puffiness: number;
@@ -51,7 +51,7 @@ export type LiquidTypeOptions = {
   spin: number;
 };
 
-export const DEFAULT_OPTIONS: LiquidTypeOptions = {
+export const DEFAULT_OPTIONS: BalloonTypeOptions = {
   puffiness: 0.07,
   glossSharpness: 28,
   shadow: 0.07,
