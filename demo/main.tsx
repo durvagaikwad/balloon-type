@@ -18,6 +18,7 @@ const CONTROLS: Record<keyof BalloonTypeOptions, Spec> = {
   puffiness: { label: "Puffiness", min: 0.01, max: 0.15, step: 0.001, group: "Look" },
   glossSharpness: { label: "Gloss", min: 4, max: 120, step: 1, group: "Look" },
   tilt: { label: "Tilt", min: 0, max: 30, step: 1, group: "Look" },
+  scale: { label: "Scale", min: 0.3, max: 1, step: 0.01, group: "Look" },
   shadow: { label: "Shadow", min: 0, max: 0.3, step: 0.005, group: "Look" },
   rounding: { label: "Rounding", min: 0, max: 0.08, step: 0.005, group: "Look" },
 
@@ -127,7 +128,16 @@ function App() {
   const [font, setFont] = useState(FONTS[0].family);
   const [background, setBackground] = useState("#F1ECE3");
   const [ink, setInk] = useState("#0b0b0c");
-  const [options, setOptions] = useState<BalloonTypeOptions>(DEFAULT_OPTIONS);
+  // any option can also come from the address, e.g. ?scale=0.7&homePull=0
+  const [options, setOptions] = useState<BalloonTypeOptions>(() => {
+    const o = { ...DEFAULT_OPTIONS };
+    for (const key of Object.keys(o) as (keyof BalloonTypeOptions)[]) {
+      const v = Number(params.get(key));
+      if (params.has(key) && Number.isFinite(v)) o[key] = v;
+    }
+    return o;
+  });
+  const arrangement = params.get("arrangement") === "row" ? "row" : "fill";
   const [tuneOpen, setTuneOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const layout = useRef<LetterPlacement[]>([]);
@@ -191,6 +201,7 @@ function App() {
       <BalloonType
         text={deferredText}
         seed={seed}
+        arrangement={arrangement}
         fontFamily={font}
         background={background}
         ink={ink}

@@ -348,7 +348,8 @@ function BalloonScene({
     const bs = b.bodies;
 
     // Fit the layout into the view (view height = 1), then add physics offsets.
-    const fit = Math.min(aspect / width, 1 / height); // edge to edge
+    // edge to edge at scale 1; smaller leaves room around the letters
+    const fit = Math.min(aspect / width, 1 / height) * o.scale;
     const rest: Rest[] = placements.map((p, i) => ({
       x: p.x * fit,
       y: p.y * fit,
